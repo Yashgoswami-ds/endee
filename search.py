@@ -1,7 +1,5 @@
 """Search the knowledge base and improve results with Wikipedia API."""
 
-import os
-import pickle
 import re
 from urllib.parse import quote
 
@@ -9,27 +7,24 @@ import numpy as np
 import requests
 from sentence_transformers import SentenceTransformer
 
+try:
+    from endee import Endee
+    ENDEE_AVAILABLE = True
+except ImportError:
+    ENDEE_AVAILABLE = False
 
-DB_FILE = os.path.join("db", "vectors.pkl")
+
 HEADERS = {
     "User-Agent": "AI Knowledge Base Assistant/1.0 (student project)",
 }
+INDEX_NAME = "knowledge_base"
+EMBEDDING_DIM = 384  # Dimension of all-MiniLM-L6-v2
+ENDEE_URL = "http://localhost:8080/api/v1"
 
 
 def tokenize(text):
     """Split text into simple lowercase words."""
     return re.findall(r"[a-zA-Z0-9']+", text.lower())
-
-
-def load_database():
-    """Load the saved paragraphs and embeddings."""
-    if not os.path.exists(DB_FILE):
-        raise FileNotFoundError("Embedding database not found. Run embed_store.py first.")
-
-    with open(DB_FILE, "rb") as file:
-        data = pickle.load(file)
-
-    return data
 
 
 def fetch_wikipedia_result(query):
@@ -81,52 +76,70 @@ def cosine_similarity(vector_a, vector_b):
 
 
 def semantic_search(query):
-    """Return the most relevant paragraph from the stored knowledge file."""
-    data = load_database()
-    paragraphs = data.get("paragraphs", [])
-    embeddings = np.array(data.get("embeddings", []))
-    embedding_type = data.get("embedding_type", "sentence-transformer")
-    vocabulary = data.get("vocabulary", [])
-
-    if len(paragraphs) == 0:
+    """Search Endee vector database for relevant paragraphs."""
+    if not ENDEE_AVAILABLE:
         return {
-            "title": "No local data found",
-            "content": "Please run fetch_data.py and embed_store.py.",
+            "title": "Endee SDK not available",
+            "content": "Install it with: pip install endee",
             "source_url": "",
             "source_label": "",
             "confidence": 0,
         }
 
-    if embedding_type == "sentence-transformer":
+    try:
+        client = Endee()
+        client.set_base_url(ENDEE_URL)
+        index = client.get_index(name=INDEX_NAME)
+
+        # Generate query embedding
         try:
-            model = SentenceTransformer(data.get("model_name", "all-MiniLM-L6-v2"), local_files_only=True)
+            model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
             query_embedding = model.encode([query], convert_to_numpy=True, show_progress_bar=False)[0]
         except Exception:
-            embedding_type = "simple-bow"
+            return {
+                "title": "Embedding model unavailable",
+                "content": "Could not generate query embedding.",
+                "source_url": "",
+                "source_label": "",
+                "confidence": 0,
+            }
 
-    if embedding_type == "simple-bow":
-        word_counts = {word: 0 for word in vocabulary}
-        for word in tokenize(query):
-            if word in word_counts:
-                word_counts[word] += 1
-        query_embedding = np.array([word_counts[word] for word in vocabulary], dtype=float)
+        # Query Endee
+        results = index.query(vector=query_embedding.tolist(), top_k=1)
 
-    best_score = -1.0
-    best_paragraph = ""
+        if not results:
+            return {
+                "title": "No match found",
+                "content": "Try a different search term.",
+                "source_url": "",
+                "source_label": "",
+                "confidence": 0,
+            }
 
-    for index, paragraph_embedding in enumerate(embeddings):
-        score = cosine_similarity(query_embedding, paragraph_embedding)
-        if score > best_score:
-            best_score = score
-            best_paragraph = paragraphs[index]
+        # Get the best result
+        best_result = results[0]
+        paragraph_text = best_result.get("meta", {}).get("text", "")
+        similarity = best_result.get("similarity", 0.0)
 
-    return {
-        "title": "Local Knowledge Base",
-        "content": best_paragraph,
-        "source_url": "",
-        "source_label": "Local data",
-        "confidence": round(max(best_score, 0.0) * 100, 1),
-    }
+        # Convert similarity (0-1) to confidence percentage
+        confidence = round(max(similarity, 0.0) * 100, 1)
+
+        return {
+            "title": "Local Knowledge Base",
+            "content": paragraph_text,
+            "source_url": "",
+            "source_label": "Endee Vector DB",
+            "confidence": confidence,
+        }
+
+    except Exception as e:
+        return {
+            "title": "Endee error",
+            "content": f"Could not connect to Endee: {str(e)}",
+            "source_url": "",
+            "source_label": "",
+            "confidence": 0,
+        }
 
 
 def search(query):
@@ -158,4 +171,5 @@ def search_knowledge_base(query):
     """Keep a simple wrapper for the Flask app."""
     if not query.strip():
         return {"title": "", "content": "", "source_url": "", "source_label": "", "confidence": 0}
+    return search(query)
     return search(query)

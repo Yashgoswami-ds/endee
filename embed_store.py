@@ -1,17 +1,24 @@
-"""Create and store embeddings for the local knowledge base."""
+"""Create and store embeddings in Endee vector database."""
 
 import os
-import pickle
 import re
 from collections import Counter
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
+try:
+    from endee import Endee, Precision
+    ENDEE_AVAILABLE = True
+except ImportError:
+    ENDEE_AVAILABLE = False
+
 
 DATA_FILE = os.path.join("data", "knowledge.txt")
-DB_FILE = os.path.join("db", "vectors.pkl")
 MODEL_NAME = "all-MiniLM-L6-v2"
+INDEX_NAME = "knowledge_base"
+EMBEDDING_DIM = 384  # Dimension of all-MiniLM-L6-v2
+ENDEE_URL = "http://localhost:8080/api/v1"
 
 
 def tokenize(text):
@@ -59,28 +66,66 @@ def create_embeddings(texts):
             vector = [word_counts[word] for word in vocabulary]
             vectors.append(vector)
 
+        # Pad BOW vectors to match EMBEDDING_DIM
+        padded_vectors = []
+        for vec in vectors:
+            padded = vec + [0] * (EMBEDDING_DIM - len(vec))
+            padded_vectors.append(padded[:EMBEDDING_DIM])
+
         return {
             "embedding_type": "simple-bow",
-            "embeddings": np.array(vectors, dtype=float),
+            "embeddings": np.array(padded_vectors, dtype=float),
             "vocabulary": vocabulary,
         }
 
 
-def store_embeddings(paragraphs, embedding_data):
-    """Save paragraphs and embeddings to a pickle file."""
-    os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
+def upsert_to_endee(paragraphs, embeddings):
+    """Upsert paragraphs and embeddings to Endee vector database."""
+    if not ENDEE_AVAILABLE:
+        print("Endee SDK not installed. Install with: pip install endee")
+        return False
 
-    data = {
-        "paragraphs": paragraphs,
-        "embeddings": embedding_data["embeddings"],
-        "embedding_type": embedding_data["embedding_type"],
-        "vocabulary": embedding_data["vocabulary"],
-        "model_name": MODEL_NAME,
-        "paragraph_count": len(paragraphs),
-    }
+    try:
+        client = Endee()
+        client.set_base_url(ENDEE_URL)
 
-    with open(DB_FILE, "wb") as file:
-        pickle.dump(data, file)
+        # Create index if it doesn't exist
+        try:
+            index = client.get_index(name=INDEX_NAME)
+            print(f"Using existing index: {INDEX_NAME}")
+        except Exception:
+            print(f"Creating new index: {INDEX_NAME}")
+            client.create_index(
+                name=INDEX_NAME,
+                dimension=EMBEDDING_DIM,
+                space_type="cosine",
+                precision=Precision.INT8,
+            )
+            index = client.get_index(name=INDEX_NAME)
+
+        # Prepare vectors for upsert
+        vectors_to_upsert = []
+        for i, (paragraph, embedding) in enumerate(zip(paragraphs, embeddings)):
+            vectors_to_upsert.append({
+                "id": f"para_{i}",
+                "vector": embedding.tolist(),
+                "meta": {"text": paragraph},
+            })
+
+        # Upsert in batches (max 1000 per call)
+        batch_size = 1000
+        for i in range(0, len(vectors_to_upsert), batch_size):
+            batch = vectors_to_upsert[i : i + batch_size]
+            index.upsert(batch)
+            print(f"Upserted batch {i // batch_size + 1}")
+
+        print(f"Successfully stored {len(paragraphs)} embeddings in Endee")
+        return True
+
+    except Exception as e:
+        print(f"Error connecting to Endee: {e}")
+        print(f"Make sure Endee server is running at {ENDEE_URL}")
+        return False
 
 
 def main():
@@ -91,8 +136,13 @@ def main():
         return
 
     embedding_data = create_embeddings(paragraphs)
-    store_embeddings(paragraphs, embedding_data)
-    print(f"Stored {len(paragraphs)} embeddings in {DB_FILE}")
+    embeddings = embedding_data["embeddings"]
+
+    success = upsert_to_endee(paragraphs, embeddings)
+    if success:
+        print(f"✓ All {len(paragraphs)} paragraphs stored in Endee")
+    else:
+        print("✗ Failed to store embeddings in Endee")
 
 
 if __name__ == "__main__":

@@ -4,55 +4,106 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Knowledge Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg-start: #f8fbff;
+      --bg-end: #e8f1ff;
+      --card: #ffffff;
+      --text-main: #1e293b;
+      --text-soft: #64748b;
+      --primary: #0f766e;
+      --primary-dark: #0b5f59;
+      --border: #dbe3ef;
+      --badge-bg: #dcfce7;
+      --badge-text: #166534;
+      --error-bg: #fef2f2;
+      --error-text: #b91c1c;
+      --error-border: #fecaca;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Poppins', sans-serif;
       margin: 0;
-      padding: 2rem;
-      background: linear-gradient(180deg, #f6f8fc 0%, #eef3ff 100%);
-      color: #1f2937;
+      min-height: 100vh;
+      padding: 2.5rem 1rem;
+      background: radial-gradient(circle at top right, #d8ebff 0%, rgba(216, 235, 255, 0) 40%),
+                  linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 100%);
+      color: var(--text-main);
+      box-sizing: border-box;
     }
+
     .container {
-      max-width: 700px;
+      max-width: 760px;
       margin: 0 auto;
-      background: #ffffff;
-      padding: 1.5rem;
-      border-radius: 10px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      background: var(--card);
+      padding: 1.8rem;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
     }
+
     h1 {
       margin-top: 0;
-      font-size: 1.8rem;
+      margin-bottom: 0.45rem;
+      font-size: 2rem;
+      letter-spacing: 0.2px;
     }
+
     form {
       display: flex;
+      flex-wrap: wrap;
       gap: 0.75rem;
       margin-bottom: 1.25rem;
     }
+
     input[type="text"] {
       flex: 1;
-      padding: 0.75rem;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
+      min-width: 220px;
+      padding: 0.8rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
       font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      background: #fcfdff;
     }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    }
+
     button {
-      padding: 0.75rem 1rem;
+      padding: 0.8rem 1.15rem;
       border: none;
-      border-radius: 8px;
-      background: #0f766e;
+      border-radius: 10px;
+      background: var(--primary);
       color: white;
       cursor: pointer;
       font-size: 1rem;
+      font-family: inherit;
+      font-weight: 600;
+      transition: background-color 0.2s ease, transform 0.15s ease;
     }
+
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
     .result {
-      padding: 0.75rem;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      margin-top: 0.6rem;
-      background: #fafafa;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-top: 0.65rem;
+      background: #f9fcff;
       white-space: pre-wrap;
     }
+
     .result-title {
       display: flex;
       justify-content: space-between;
@@ -60,33 +111,65 @@
       align-items: center;
       margin-bottom: 0.35rem;
     }
+
     .badge {
-      padding: 0.2rem 0.6rem;
+      padding: 0.22rem 0.62rem;
       border-radius: 999px;
-      background: #dcfce7;
-      color: #166534;
+      background: var(--badge-bg);
+      color: var(--badge-text);
       font-size: 0.8rem;
       font-weight: 700;
       white-space: nowrap;
     }
+
     .muted {
-      color: #6b7280;
+      color: var(--text-soft);
       font-size: 0.95rem;
     }
+
+    .muted a {
+      color: #0c4a6e;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .muted a:hover {
+      text-decoration: underline;
+    }
+
     .error {
-      color: #b91c1c;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
+      color: var(--error-text);
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
       padding: 0.75rem;
       border-radius: 8px;
       margin-top: 0.75rem;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 1.2rem;
+      }
+
+      h1 {
+        font-size: 1.55rem;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .result-title {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>AI Knowledge Base Assistant</h1>
-    <p class="muted">Ask a question to test the starter search flow.</p>
+    <p class="muted">Ask anything about Python, Java, or Machine Learning and get a quick answer.</p>
 
     <form method="POST">
       <input type="text" name="question" placeholder="Ask a question..." value="{{ query }}" required />
