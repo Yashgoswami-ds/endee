@@ -16,9 +16,15 @@ except ImportError:
 
 DATA_FILE = os.path.join("data", "knowledge.txt")
 MODEL_NAME = "all-MiniLM-L6-v2"
-INDEX_NAME = "knowledge_base"
+INDEX_NAME = os.getenv("ENDEE_INDEX_NAME", "knowledge_base")
 EMBEDDING_DIM = 384  # Dimension of all-MiniLM-L6-v2
-ENDEE_URL = "http://localhost:8080/api/v1"
+ENDEE_URL = os.getenv("ENDEE_URL", "http://localhost:8080/api/v1")
+ALLOW_MODEL_DOWNLOAD = os.getenv("ALLOW_MODEL_DOWNLOAD", "1").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
 
 def tokenize(text):
@@ -50,7 +56,7 @@ def load_paragraphs():
 def create_embeddings(texts):
     """Generate embeddings for a list of paragraphs."""
     try:
-        model = SentenceTransformer(MODEL_NAME, local_files_only=True)
+        model = SentenceTransformer(MODEL_NAME, local_files_only=not ALLOW_MODEL_DOWNLOAD)
         embeddings = model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
         return {
             "embedding_type": "sentence-transformer",
