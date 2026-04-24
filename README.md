@@ -54,6 +54,29 @@ It is designed to be simple to run, easy to understand, and practical for day-to
 4. URL extract request goes to link_extractor.py
 5. Result is rendered in templates/index.html
 
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+  U[User Browser] --> F[Flask App - app.py]
+
+  F --> S[Search Service - search.py]
+  F --> L[URL Extractor - link_extractor.py]
+  F --> P[PDF Handler - pdf_handler.py]
+  F --> T[Translator - translator.py]
+
+  S --> E[Endee Vector DB API - endee_api.py]
+  S --> W[Wikipedia API]
+
+  P --> K[data/knowledge.txt]
+  P --> E
+
+  F --> H[templates/index.html]
+  F --> FB[data/feedback.jsonl]
+```
+
+If your Markdown preview does not render Mermaid, use the flow above as the architecture reference.
+
 ## Tech Stack
 
 - Backend: Python, Flask
@@ -107,6 +130,21 @@ http://127.0.0.1:5000
 4. URL test: https://example.com shows extracted content
 5. PDF upload page works
 6. Search returns ranked results with score
+
+## Test Cases (Pass Results)
+
+| # | Test Case | Expected Result | Status |
+|---|-----------|-----------------|--------|
+| 1 | Python compile check (`search.py`, `pdf_handler.py`, `app.py`, `endee_api.py`) | No syntax errors | PASS |
+| 2 | Home page route test (`/`) | HTTP 200 response | PASS |
+| 3 | About and Upload routes (`/about`, `/upload-pdf`) | HTTP 200 responses | PASS |
+| 4 | URL extraction flow (`https://example.com`) | Extracted page title/content shown | PASS |
+| 5 | Endee-required enforcement for local/PDF retrieval | Clear error if Endee is not configured; Endee path used when configured | PASS |
+
+### Last Verified On
+
+- Date: 2026-04-24
+- Method: Flask test client + compile checks
 
 ## Important Files
 
