@@ -168,32 +168,23 @@ def _search_online_wikipedia(query, top_k=3):
 
 
 def _search_local(query, source_mode="all", top_k=3):
-    """Search local/PDF data with Endee first when applicable."""
-    entries = _load_local_entries(source_mode)
-    if not entries:
-        return [], "No local knowledge found for selected source"
+    """Search local/PDF data strictly via Endee vector search."""
+    if not endee_configured():
+        return [], "Endee is required for local/PDF search. Configure ENDEE_API_KEY in .env"
 
-    # Endee currently has no per-source metadata filter, so use it only for all/local mode.
-    if source_mode in {"all", "local"} and endee_configured():
-        endee_results, endee_error = search_endee(query, top_k=top_k)
-        if endee_results:
-            normalized = []
-            for result in endee_results:
-                normalized.append({
-                    "text": result.get("text", ""),
-                    "score": result.get("score", 0.0),
-                    "source": "local",
-                })
-            return normalized, None
+    endee_results, endee_error = search_endee(query, top_k=top_k)
+    if not endee_results:
+        return [], endee_error or "No Endee results found"
 
-        # Fall through to local scoring if Endee is unavailable.
-        _ = endee_error
+    normalized = []
+    for result in endee_results:
+        normalized.append({
+            "text": result.get("text", ""),
+            "score": result.get("score", 0.0),
+            "source": "local",
+        })
 
-    local_results = _mock_search_entries(query, entries, top_k=top_k)
-    if not local_results:
-        return [], "No relevant local matches found"
-
-    return local_results, None
+    return normalized, None
 
 
 def explain_result(best_result):

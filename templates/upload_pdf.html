@@ -10,14 +10,14 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --cream: #faf9f7;
-      --white: #ffffff;
-      --ink: #1a1a1a;
-      --ink-soft: #6b6b6b;
-      --border: #e8e5e0;
-      --rust: #cf5c36;
-      --rust-light: #fdf0eb;
-      --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+      --cream: #0b1118;
+      --white: #121b27;
+      --ink: #e6edf3;
+      --ink-soft: #9bb0c6;
+      --border: #243244;
+      --rust: #3fbf9b;
+      --rust-light: #143126;
+      --shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.28);
     }
 
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
@@ -101,7 +101,7 @@
       font-size: 0.95rem; font-weight: 500; margin-top: 0.5rem;
       transition: background 0.2s, transform 0.1s;
     }
-    .cta:hover { background: #b84d2d; transform: translateY(-1px); }
+    .cta:hover { background: #2ea37f; transform: translateY(-1px); }
 
     @media (max-width: 540px) {
       .hero h1 { font-size: 1.9rem; }
@@ -152,19 +152,19 @@
     <ul class="steps">
       <li class="step">
         <span class="step-num">1</span>
-        <span class="step-text"><strong>Search page kholo</strong> — Home page par jaao</span>
+        <span class="step-text"><strong>Open the Search page</strong> — Go to the home page</span>
       </li>
       <li class="step">
         <span class="step-num">2</span>
-        <span class="step-text"><strong>Question type karo</strong> — Jo bhi jaanna ho</span>
+        <span class="step-text"><strong>Type your question</strong> — Ask anything you want to know</span>
       </li>
       <li class="step">
         <span class="step-num">3</span>
-        <span class="step-text"><strong>Language aur source choose karo</strong> — PDF, Online, ya dono</span>
+        <span class="step-text"><strong>Choose language and source</strong> — PDF, Online, or both</span>
       </li>
       <li class="step">
         <span class="step-num">4</span>
-        <span class="step-text"><strong>Search karo</strong> — Best answer sabse upar milega</span>
+        <span class="step-text"><strong>Hit Search</strong> — The best answer will appear at the top</span>
       </li>
     </ul>
   </div>
@@ -174,7 +174,7 @@
   <div class="section">
     <p class="section-label">PDF Upload</p>
     <h2>Add your documents</h2>
-    <p style="margin-bottom: 1.5rem;">Upload page par jaake apni PDF choose karo. Upload hone ke baad Search me "Only PDF" mode select karo — aur apne document se directly sawaal karo.</p>
+    <p style="margin-bottom: 1.5rem;">Go to the Upload page and select your PDF file. Once uploaded, head to Search and choose "Only PDF" mode — then ask questions directly from your document.</p>
     <a href="{{ url_for('upload_pdf') }}" class="cta">Upload a PDF →</a>
   </div>
 

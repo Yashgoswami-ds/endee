@@ -10,15 +10,18 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --cream: #faf9f7;
-      --white: #ffffff;
-      --ink: #1a1a1a;
-      --ink-soft: #6b6b6b;
-      --ink-faint: #c4c4c4;
-      --rust: #cf5c36;
-      --rust-light: #fdf0eb;
-      --border: #e8e5e0;
-      --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+      --cream: #0b1118;
+      --white: #121b27;
+      --ink: #e6edf3;
+      --ink-soft: #9bb0c6;
+      --ink-faint: #6f8296;
+      --rust: #3fbf9b;
+      --rust-light: #143126;
+      --brand: #4fd1a3;
+      --brand-dark: #2ea37f;
+      --brand-light: #183729;
+      --border: #243244;
+      --shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.28);
     }
 
     body {
@@ -26,6 +29,32 @@
       background: var(--cream);
       color: var(--ink);
       min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      filter: blur(48px);
+      z-index: -1;
+      opacity: 0.32;
+    }
+
+    body::before {
+      background: #1f4f44;
+      top: -80px;
+      right: -110px;
+    }
+
+    body::after {
+      background: #1b334a;
+      bottom: -120px;
+      left: -120px;
     }
 
     /* NAV */
@@ -86,6 +115,19 @@
       margin-bottom: 2.5rem;
     }
 
+    .hero-kicker {
+      display: inline-block;
+      padding: 0.34rem 0.72rem;
+      border-radius: 999px;
+      background: var(--brand-light);
+      color: var(--brand-dark);
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.7rem;
+    }
+
     .hero h1 {
       font-family: 'Instrument Serif', serif;
       font-size: 2.4rem;
@@ -102,6 +144,7 @@
       font-size: 0.95rem;
       font-weight: 300;
       line-height: 1.6;
+      max-width: 620px;
     }
 
     /* SEARCH CARD */
@@ -163,7 +206,7 @@
     .btn-primary {
       flex: 1;
       padding: 0.8rem 1.5rem;
-      background: var(--rust);
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
       color: white;
       border: none;
       border-radius: 10px;
@@ -171,17 +214,20 @@
       font-size: 0.95rem;
       font-weight: 500;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+      transition: transform 0.1s, box-shadow 0.2s;
     }
 
-    .btn-primary:hover { background: #b84d2d; transform: translateY(-1px); }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(15, 118, 110, 0.24);
+    }
     .btn-primary:active { transform: translateY(0); }
 
     .btn-ghost {
       padding: 0.8rem 1.25rem;
-      background: transparent;
-      color: var(--ink-soft);
-      border: 1px solid var(--border);
+      background: var(--white);
+      color: var(--brand-dark);
+      border: 1px solid #2f6155;
       border-radius: 10px;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.9rem;
@@ -194,19 +240,19 @@
       white-space: nowrap;
     }
 
-    .btn-ghost:hover { border-color: var(--rust); color: var(--rust); }
+    .btn-ghost:hover { border-color: var(--brand); color: var(--brand); }
 
     /* FLASH */
     .flash { padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; }
-    .flash-success { background: #edf7ed; color: #2d6a2d; border: 1px solid #b8ddb8; }
-    .flash-error { background: #fdf0eb; color: #8b2500; border: 1px solid #f0c0a8; }
+    .flash-success { background: #0f2d23; color: #9bf0cf; border: 1px solid #225540; }
+    .flash-error { background: #33191b; color: #ffb4b7; border: 1px solid #6f2f35; }
 
     /* RESULTS */
     .results-wrap { margin-top: 0; }
 
     .best-card {
       background: var(--white);
-      border: 1px solid #e8d5cc;
+      border: 1px solid var(--border);
       border-radius: 16px;
       padding: 1.75rem;
       box-shadow: var(--shadow);
@@ -225,7 +271,7 @@
     }
 
     .tag-best { background: var(--rust-light); color: var(--rust); }
-    .tag-source { background: #f0f0f0; color: #555; }
+    .tag-source { background: #202b39; color: #b4c4d8; }
 
     .best-text {
       font-size: 1.05rem;
@@ -260,9 +306,9 @@
 
     .btn-like {
       padding: 0.45rem 0.9rem;
-      border: 1px solid #c6e8c6;
-      background: #edf7ed;
-      color: #2d6a2d;
+      border: 1px solid #2d6a55;
+      background: #133629;
+      color: #9bf0cf;
       border-radius: 8px;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.85rem;
@@ -272,9 +318,9 @@
 
     .btn-dislike {
       padding: 0.45rem 0.9rem;
-      border: 1px solid #f0c0a8;
-      background: var(--rust-light);
-      color: var(--rust);
+      border: 1px solid #5f3d46;
+      background: #2d2024;
+      color: #ffafb8;
       border-radius: 8px;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.85rem;
@@ -355,17 +401,17 @@
     .translated {
       margin-top: 0.65rem;
       padding: 0.65rem 0.8rem;
-      background: #f5f3ff;
-      border-left: 2px solid #8b5cf6;
+      background: #1d2136;
+      border-left: 2px solid #9a88ff;
       border-radius: 0 6px 6px 0;
       font-size: 0.88rem;
-      color: #4c1d95;
+      color: #d7ceff;
     }
 
     .error-box {
-      background: var(--rust-light);
-      border: 1px solid #f0c0a8;
-      color: #8b2500;
+      background: #32191b;
+      border: 1px solid #6f2f35;
+      color: #ffb4b7;
       padding: 1rem 1.25rem;
       border-radius: 10px;
       font-size: 0.92rem;
@@ -446,8 +492,9 @@
 
 <main>
   <div class="hero">
+    <span class="hero-kicker">Knowledge Copilot</span>
     <h1>Ask anything,<br><em>get answers.</em></h1>
-    <p>Search your PDFs or the web — translated in your language.</p>
+    <p>Search your PDFs or the web, then get clear, ranked answers in your selected language.</p>
   </div>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -485,7 +532,7 @@
       </div>
       <div class="search-actions">
         <button type="submit" class="btn-primary">Search</button>
-        <a href="{{ url_for('upload_pdf') }}" class="btn-ghost">↑ Upload PDF</a>
+        <a href="{{ url_for('upload_pdf') }}" class="btn-ghost">Upload PDF</a>
       </div>
     </form>
 

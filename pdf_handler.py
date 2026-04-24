@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from endee_api import store_to_endee, is_configured as endee_configured
 
 try:
     from PyPDF2 import PdfReader
@@ -72,6 +73,9 @@ def handle_pdf_upload(pdf_file):
     if not PDF_AVAILABLE:
         return False, "PDF support not installed"
 
+    if not endee_configured():
+        return False, "Endee is required. Configure ENDEE_API_KEY in .env"
+
     try:
         ensure_upload_folder()
 
@@ -87,10 +91,14 @@ def handle_pdf_upload(pdf_file):
 
         # Save to knowledge base
         success = save_pdf_text_to_knowledge(filename, text_chunks)
-        if success:
-            return True, f"PDF '{filename}' successfully processed and added to knowledge base"
-        else:
+        if not success:
             return False, "Error saving PDF content to knowledge base"
+
+        stored, store_message = store_to_endee(text_chunks)
+        if not stored:
+            return False, f"PDF text extracted, but Endee upsert failed: {store_message}"
+
+        return True, f"PDF '{filename}' processed and synced to Endee"
 
     except Exception as e:
         return False, f"Error handling PDF: {str(e)}"
