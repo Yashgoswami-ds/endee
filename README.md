@@ -4,6 +4,16 @@ AI Knowledge Assistant is a Flask-based app that lets you search across local no
 
 It is designed to be simple to run, easy to understand, and practical for day-to-day use.
 
+Demo Video: Add your hosted demo link here (Google Drive/YouTube)
+
+## Problem Statement
+
+Information is often scattered across local notes, PDFs, and web pages, making it difficult to retrieve accurate answers quickly.
+
+Traditional keyword search usually misses context and intent, especially when users ask natural-language questions.
+
+This project solves that problem by combining vector-based retrieval with a simple user-facing workflow, so users can search heterogeneous sources and get ranked, relevant answers.
+
 ## What You Can Do
 
 - Ask natural-language questions and get top 3 matching answers
@@ -54,6 +64,24 @@ It is designed to be simple to run, easy to understand, and practical for day-to
 4. URL extract request goes to link_extractor.py
 5. Result is rendered in templates/index.html
 
+## How Endee is Used (Indexing + Search Flow)
+
+### Indexing Flow
+- During ingestion, text content from local knowledge and uploaded PDFs is chunked.
+- Chunks are sent to Endee using `store_to_endee()` from `endee_api.py`.
+- Endee stores vector-ready records that become available for semantic retrieval.
+
+### Search Flow
+- For local/PDF retrieval paths, the app uses Endee as the required retrieval backend.
+- Query is sent through `search_endee(query, top_k=3)`.
+- Endee returns top matches with similarity scores.
+- Results are normalized and shown in ranked order in the UI.
+
+### Why Endee Here
+- Supports semantic matching over plain keyword matching.
+- Improves relevance for natural-language questions.
+- Fits the project requirement for vector database-based AI workflows.
+
 ## Architecture Diagram
 
 ```mermaid
@@ -80,7 +108,7 @@ If your Markdown preview does not render Mermaid, use the flow above as the arch
 ## Tech Stack
 
 - Backend: Python, Flask
-- Data/API: requests, Endee API (optional)
+- Data/API: requests, Endee API (required for local/PDF retrieval)
 - Parsing: BeautifulSoup4, PyPDF2
 - Translation: googletrans, deep-translator
 - Frontend: HTML + CSS (Jinja templates)
@@ -106,8 +134,8 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3) Optional environment config
-Create .env in project root if you want Endee API enabled:
+### 3) Environment config
+Create .env in project root. Endee is required for local/PDF retrieval modes:
 
 ```env
 ENDEE_BASE_URL=https://api.endee.ai/v1
@@ -121,6 +149,11 @@ python app.py
 
 Open in browser:
 http://127.0.0.1:5000
+
+### 5) Run tests
+```bash
+pytest -q
+```
 
 ## Quick Validation Checklist
 
@@ -185,6 +218,19 @@ AI-Knowledge-Assistant/
 - Do not commit your .env file
 - URL extraction works only for public HTML pages
 - Some websites block scraping; in that case extraction may fail gracefully with an error message
+
+## Known Limitations
+
+- Full generative answer synthesis (LLM generation) is not included yet; current flow is retrieval + ranking.
+- Online mode depends on Wikipedia API availability.
+- Some websites prevent automated scraping, so URL extraction may fail for blocked pages.
+
+## Future Improvements
+
+- Add full RAG generation layer with grounded response prompts.
+- Add CI workflow for tests and lint checks on pull requests.
+- Add observability dashboard for ingestion/search metrics.
+- Add metadata-filtered retrieval in Endee for stricter source-specific search.
 
 ## Developer
 

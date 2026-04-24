@@ -7,3 +7,6 @@ __pycache__/
 db/
 .vscode/
 *.log
+.pytest_cache/
+data/feedback.jsonl
+data/uploads/

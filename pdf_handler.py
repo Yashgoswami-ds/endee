@@ -1,7 +1,9 @@
 """Handle PDF upload and text extraction."""
 
 import os
+import logging
 from pathlib import Path
+from werkzeug.utils import secure_filename
 from endee_api import store_to_endee, is_configured as endee_configured
 
 try:
@@ -13,6 +15,7 @@ except ImportError:
 
 UPLOAD_FOLDER = os.path.join("data", "uploads")
 KNOWLEDGE_FILE = os.path.join("data", "knowledge.txt")
+logger = logging.getLogger(__name__)
 
 
 def ensure_upload_folder():
@@ -39,6 +42,7 @@ def extract_pdf_text(pdf_path):
 
         return text_chunks, None
     except Exception as e:
+        logger.exception("pdf_extract_exception path=%s", pdf_path)
         return None, f"Error extracting PDF: {str(e)}"
 
 
@@ -56,7 +60,7 @@ def save_pdf_text_to_knowledge(pdf_name, text_chunks):
 
         return True
     except Exception as e:
-        print(f"Error saving PDF text: {e}")
+        logger.exception("pdf_save_text_failed pdf_name=%s", pdf_name)
         return False
 
 
@@ -80,7 +84,9 @@ def handle_pdf_upload(pdf_file):
         ensure_upload_folder()
 
         # Save uploaded file
-        filename = pdf_file.filename
+        filename = secure_filename(pdf_file.filename or "")
+        if not filename:
+            return False, "Invalid file name"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         pdf_file.save(filepath)
 
@@ -96,11 +102,14 @@ def handle_pdf_upload(pdf_file):
 
         stored, store_message = store_to_endee(text_chunks)
         if not stored:
+            logger.warning("pdf_endee_sync_failed filename=%s reason=%s", filename, store_message)
             return False, f"PDF text extracted, but Endee upsert failed: {store_message}"
 
+        logger.info("pdf_upload_success filename=%s chunks=%s", filename, len(text_chunks))
         return True, f"PDF '{filename}' processed and synced to Endee"
 
     except Exception as e:
+        logger.exception("pdf_upload_exception")
         return False, f"Error handling PDF: {str(e)}"
 
 

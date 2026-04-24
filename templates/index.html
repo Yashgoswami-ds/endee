@@ -147,6 +147,36 @@
       max-width: 620px;
     }
 
+    .status-row {
+      margin-top: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--ink-soft);
+      font-size: 0.82rem;
+    }
+
+    .status-pill {
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      border: 1px solid transparent;
+    }
+
+    .status-ok {
+      background: #143126;
+      color: #9bf0cf;
+      border-color: #2b6a53;
+    }
+
+    .status-warn {
+      background: #332a16;
+      color: #f7d59a;
+      border-color: #7a6332;
+    }
+
     /* SEARCH CARD */
     .search-card {
       background: var(--white);
@@ -495,6 +525,10 @@
     <span class="hero-kicker">Knowledge Copilot</span>
     <h1>Ask anything,<br><em>get answers.</em></h1>
     <p>Search your PDFs or the web, then get clear, ranked answers in your selected language.</p>
+    <div class="status-row">
+      <span>Endee Status:</span>
+      <span class="status-pill {% if endee_status == 'Configured' %}status-ok{% else %}status-warn{% endif %}">{{ endee_status }}</span>
+    </div>
   </div>
 
   {% with messages = get_flashed_messages(with_categories=true) %}

@@ -2,15 +2,28 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 import os
 import json
+import logging
 from datetime import datetime, timezone
+
+from dotenv import load_dotenv
 
 from search import search
 from pdf_handler import handle_pdf_upload
 from translator import SUPPORTED_LANGUAGES, is_available as translator_available
 from link_extractor import extract_from_url
+from endee_api import is_configured as endee_configured
+
+
+load_dotenv()
+
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = "your-secret-key-change-in-production"  # For flash messages
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-change-me")
 
 # Configuration
 UPLOAD_FOLDER = os.path.join("data", "uploads")
@@ -43,6 +56,7 @@ def index():
     link_url = ""
     extracted_link = None
     link_error_message = ""
+    endee_status = "Configured" if endee_configured() else "Not Configured"
     language = request.args.get("language", "en")
     source_mode = request.args.get("source", "all")
     
@@ -52,11 +66,16 @@ def index():
         if action == "extract_link":
             link_url = request.form.get("link_url", "").strip()
 
-            success, result = extract_from_url(link_url)
-            if success:
-                extracted_link = result
-            else:
-                link_error_message = result
+            try:
+                success, result = extract_from_url(link_url)
+                if success:
+                    extracted_link = result
+                else:
+                    link_error_message = result
+                    logger.warning("url_extract_failed url=%s reason=%s", link_url, result)
+            except Exception as error:
+                logger.exception("url_extract_exception url=%s", link_url)
+                link_error_message = f"Unexpected extraction error: {str(error)}"
         else:
             # Search flow
             query = request.form.get("question", "").strip()
@@ -64,7 +83,13 @@ def index():
             source_mode = request.form.get("source_mode", source_mode)
 
             if query:
-                search_result = search(query, target_language=language, source_mode=source_mode)
+                try:
+                    search_result = search(query, target_language=language, source_mode=source_mode)
+                except Exception as error:
+                    logger.exception(
+                        "search_exception source_mode=%s language=%s", source_mode, language
+                    )
+                    search_result = {"success": False, "error": f"Unexpected search error: {str(error)}"}
 
                 if language != "en" and not translator_available():
                     flash("Selected language translation is unavailable. Install: pip install deep-translator", "error")
@@ -83,6 +108,7 @@ def index():
         link_url=link_url,
         extracted_link=extracted_link,
         link_error_message=link_error_message,
+        endee_status=endee_status,
     )
 
 
@@ -114,6 +140,7 @@ def feedback():
         save_feedback(feedback_data)
         flash("Thanks! Feedback saved.", "success")
     except Exception:
+        logger.exception("feedback_save_failed")
         flash("Could not save feedback. Try again.", "error")
 
     return redirect(url_for("index", language=language, source=source_mode))
@@ -140,6 +167,7 @@ def upload_pdf():
         
         # Handle PDF upload
         success, message = handle_pdf_upload(file)
+        logger.info("pdf_upload_processed success=%s filename=%s", success, file.filename)
         
         if success:
             flash(f"✓ {message}", "success")

@@ -1,21 +1,23 @@
 """Endee API integration for vector search."""
 
 import os
-import json
-from typing import List, Dict, Optional
-import warnings
-import urllib3
+import logging
+from typing import List, Dict
 
 import requests
 import dotenv
 
-# Suppress SSL warnings (for testing with verify=False)
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-warnings.filterwarnings("ignore", message="Unverified HTTPS request")
+logger = logging.getLogger(__name__)
 
-# Create custom session with SSL verification disabled
+# Create session and configure SSL verification via environment.
 session = requests.Session()
-session.verify = False
+ENDEE_VERIFY_SSL = os.getenv("ENDEE_VERIFY_SSL", "true").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+session.verify = ENDEE_VERIFY_SSL
 session.headers.update({"User-Agent": "Python-Requests"})
 
 # Load environment variables
@@ -23,6 +25,7 @@ dotenv.load_dotenv()
 
 ENDEE_BASE_URL = os.getenv("ENDEE_BASE_URL", "https://api.endee.ai/v1")
 ENDEE_API_KEY = os.getenv("ENDEE_API_KEY", "")
+ENDEE_TIMEOUT_SECONDS = int(os.getenv("ENDEE_TIMEOUT_SECONDS", "15"))
 
 # Headers for API requests
 HEADERS = {
@@ -64,13 +67,17 @@ def store_to_endee(text_chunks: List[str]) -> tuple:
                 f"{ENDEE_BASE_URL}/vectors",
                 json=payload,
                 headers=HEADERS,
-                timeout=15
+                timeout=ENDEE_TIMEOUT_SECONDS,
             )
 
             if response.status_code == 201:  # Created
                 stored_count += 1
             else:
-                print(f"Warning: Failed to store chunk (status {response.status_code})")
+                logger.warning(
+                    "endee_store_failed status=%s base_url=%s",
+                    response.status_code,
+                    ENDEE_BASE_URL,
+                )
 
         return True, f"Stored {stored_count} chunks to Endee"
 
@@ -109,7 +116,7 @@ def search_endee(query: str, top_k: int = 3) -> tuple:
             f"{ENDEE_BASE_URL}/search",
             json=payload,
             headers=HEADERS,
-            timeout=15
+            timeout=ENDEE_TIMEOUT_SECONDS,
         )
 
         if response.status_code == 200:
@@ -126,6 +133,11 @@ def search_endee(query: str, top_k: int = 3) -> tuple:
             
             return formatted_results, None
         else:
+            logger.warning(
+                "endee_search_failed status=%s base_url=%s",
+                response.status_code,
+                ENDEE_BASE_URL,
+            )
             return None, f"Endee API error: {response.status_code}"
 
     except requests.RequestException as e:
@@ -143,7 +155,7 @@ def delete_all_vectors() -> tuple:
         response = session.delete(
             f"{ENDEE_BASE_URL}/vectors",
             headers=HEADERS,
-            timeout=15
+            timeout=ENDEE_TIMEOUT_SECONDS,
         )
 
         if response.status_code == 200:

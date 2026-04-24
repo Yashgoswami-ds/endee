@@ -2,12 +2,15 @@
 
 import os
 import re
+import logging
 from urllib.parse import quote
 
 import requests
 
 from endee_api import search_endee, is_configured as endee_configured
 from translator import translate_result
+
+logger = logging.getLogger(__name__)
 
 
 KNOWLEDGE_FILE = os.path.join("data", "knowledge.txt")
@@ -162,18 +165,22 @@ def _search_online_wikipedia(query, top_k=3):
         return results[:top_k], None
 
     except requests.RequestException as error:
+        logger.warning("online_search_failed query=%s error=%s", query, str(error))
         return [], f"Online search failed: {str(error)}"
     except Exception as error:
+        logger.exception("online_search_exception query=%s", query)
         return [], f"Online search error: {str(error)}"
 
 
 def _search_local(query, source_mode="all", top_k=3):
     """Search local/PDF data strictly via Endee vector search."""
     if not endee_configured():
+        logger.warning("endee_not_configured source_mode=%s", source_mode)
         return [], "Endee is required for local/PDF search. Configure ENDEE_API_KEY in .env"
 
     endee_results, endee_error = search_endee(query, top_k=top_k)
     if not endee_results:
+        logger.warning("endee_search_empty query=%s error=%s", query, endee_error)
         return [], endee_error or "No Endee results found"
 
     normalized = []
@@ -218,6 +225,7 @@ def search(query, target_language="en", source_mode="all"):
     - online: only online API results
     """
     if not query.strip():
+        logger.info("search_empty_query")
         return {
             "success": False,
             "error": "Please enter a search query",
@@ -228,6 +236,7 @@ def search(query, target_language="en", source_mode="all"):
 
     allowed_sources = {"all", "pdf", "online", "local"}
     if source_mode not in allowed_sources:
+        logger.info("search_invalid_source_mode mode=%s", source_mode)
         source_mode = "all"
 
     results = []
@@ -263,6 +272,7 @@ def search(query, target_language="en", source_mode="all"):
         results = combined[:3]
 
     if not results:
+        logger.info("search_no_results source_mode=%s details=%s", source_mode, errors)
         return {
             "success": False,
             "error": "No relevant results found. Try a more specific question.",
