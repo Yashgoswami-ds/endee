@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-from werkzeug.utils import secure_filename
+from flask import jsonify
 import os
 import json
 import logging
@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 from search import search
-from pdf_handler import handle_pdf_upload
+from pdf_handler import handle_pdf_upload, list_uploaded_pdfs
 from translator import SUPPORTED_LANGUAGES, is_available as translator_available
 from link_extractor import extract_from_url
 from endee_api import is_configured as endee_configured
@@ -28,6 +28,7 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-change-me")
 # Configuration
 UPLOAD_FOLDER = os.path.join("data", "uploads")
 FEEDBACK_FILE = os.path.join("data", "feedback.jsonl")
+SEARCH_HISTORY_FILE = os.path.join("data", "search_history.jsonl")
 ALLOWED_EXTENSIONS = {"pdf"}
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB max file size
@@ -45,6 +46,31 @@ def save_feedback(feedback_data):
     os.makedirs("data", exist_ok=True)
     with open(FEEDBACK_FILE, "a", encoding="utf-8") as file:
         file.write(json.dumps(feedback_data, ensure_ascii=False) + "\n")
+
+
+def save_search_history(history_data):
+    """Persist search and extraction activity for later review."""
+    os.makedirs("data", exist_ok=True)
+    with open(SEARCH_HISTORY_FILE, "a", encoding="utf-8") as file:
+        file.write(json.dumps(history_data, ensure_ascii=False) + "\n")
+
+
+def load_search_history(limit=50):
+    """Load recent search history entries from the JSONL history file."""
+    if not os.path.exists(SEARCH_HISTORY_FILE):
+        return []
+
+    entries = []
+    with open(SEARCH_HISTORY_FILE, "r", encoding="utf-8") as file:
+        lines = [line.strip() for line in file if line.strip()]
+
+    for line in lines[-limit:]:
+        try:
+            entries.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+
+    return list(reversed(entries))
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -73,9 +99,26 @@ def index():
                 else:
                     link_error_message = result
                     logger.warning("url_extract_failed url=%s reason=%s", link_url, result)
+
+                save_search_history({
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "type": "url_extract",
+                    "url": link_url,
+                    "success": success,
+                    "title": extracted_link.get("title") if extracted_link else None,
+                    "message": None if success else result,
+                })
             except Exception as error:
                 logger.exception("url_extract_exception url=%s", link_url)
                 link_error_message = f"Unexpected extraction error: {str(error)}"
+                save_search_history({
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "type": "url_extract",
+                    "url": link_url,
+                    "success": False,
+                    "title": None,
+                    "message": str(error),
+                })
         else:
             # Search flow
             query = request.form.get("question", "").strip()
@@ -96,6 +139,19 @@ def index():
 
                 if search_result and not search_result.get("success"):
                     error_message = search_result.get("error", "Search failed")
+
+                best_result = search_result.get("best_result") if search_result else None
+                save_search_history({
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "type": "search",
+                    "query": query,
+                    "source_mode": source_mode,
+                    "language": language,
+                    "success": bool(search_result and search_result.get("success")),
+                    "result_count": len(search_result.get("results", [])) if search_result else 0,
+                    "best_score": best_result.get("score") if best_result else None,
+                    "best_source": best_result.get("source") if best_result else None,
+                })
     
     return render_template(
         "index.html",
@@ -110,6 +166,43 @@ def index():
         link_error_message=link_error_message,
         endee_status=endee_status,
     )
+
+
+@app.route("/history")
+def history():
+    """Show recent search and URL extraction history."""
+    return render_template("history.html", history_entries=load_search_history())
+
+
+@app.route("/documents")
+def documents():
+    """Show uploaded PDF documents."""
+    return render_template("documents.html", documents=list_uploaded_pdfs())
+
+
+@app.route("/api/search", methods=["POST"])
+def api_search():
+    """Return search results as JSON for API consumers."""
+    payload = request.get_json(silent=True) or request.form.to_dict() or {}
+    query = (payload.get("query") or "").strip()
+    language = (payload.get("language") or "en").strip()
+    source_mode = (payload.get("source_mode") or "all").strip()
+
+    result = search(query, target_language=language, source_mode=source_mode)
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
+
+
+@app.route("/api/history")
+def api_history():
+    """Return recent activity history as JSON."""
+    return jsonify({"entries": load_search_history()})
+
+
+@app.route("/api/documents")
+def api_documents():
+    """Return uploaded documents as JSON."""
+    return jsonify({"documents": list_uploaded_pdfs()})
 
 
 @app.route("/feedback", methods=["POST"])

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History — AI Knowledge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --cream: #0b1118;
+      --white: #121b27;
+      --ink: #e6edf3;
+      --ink-soft: #9bb0c6;
+      --border: #243244;
+      --rust: #3fbf9b;
+      --rust-light: #143126;
+      --shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.28);
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+    nav { background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 920px; margin: 0 auto; padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-family: 'Instrument Serif', serif; font-size: 1.25rem; color: var(--ink); text-decoration: none; }
+    .logo span { color: var(--rust); font-style: italic; }
+    .nav-links { display: flex; gap: 0.25rem; list-style: none; flex-wrap: wrap; justify-content: flex-end; }
+    .nav-links a { text-decoration: none; color: var(--ink-soft); font-size: 0.875rem; padding: 0.4rem 0.75rem; border-radius: 6px; transition: background 0.15s, color 0.15s; }
+    .nav-links a:hover { background: var(--cream); color: var(--ink); }
+    .nav-links a.active { color: var(--rust); background: var(--rust-light); }
+    main { max-width: 920px; margin: 0 auto; padding: 3.5rem 1.5rem 4rem; }
+    .hero { margin-bottom: 2rem; }
+    .hero h1 { font-family: 'Instrument Serif', serif; font-size: 2.4rem; font-weight: 400; line-height: 1.2; margin-bottom: 0.6rem; }
+    .hero h1 em { color: var(--rust); font-style: italic; }
+    .hero p { color: var(--ink-soft); font-size: 0.95rem; font-weight: 300; line-height: 1.6; max-width: 60ch; }
+    .section-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--rust); margin-bottom: 1rem; }
+    .grid { display: grid; gap: 1rem; }
+    .entry {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1rem 1.1rem;
+      box-shadow: var(--shadow);
+    }
+    .entry-head { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .entry-type { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--rust); }
+    .entry-time { color: var(--ink-soft); font-size: 0.85rem; }
+    .entry-title { font-size: 1rem; font-weight: 500; margin-bottom: 0.35rem; color: var(--ink); }
+    .entry-meta { color: var(--ink-soft); font-size: 0.9rem; line-height: 1.6; word-break: break-word; }
+    .pill-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .pill { display: inline-flex; align-items: center; padding: 0.35rem 0.65rem; border-radius: 999px; background: var(--rust-light); color: var(--rust); font-size: 0.78rem; }
+    .empty { background: var(--white); border: 1px dashed var(--border); border-radius: 18px; padding: 1.25rem; color: var(--ink-soft); }
+    @media (max-width: 540px) { .hero h1 { font-size: 1.9rem; } }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="{{ url_for('index') }}" class="logo">AI <span>Knowledge</span></a>
+    <ul class="nav-links">
+      <li><a href="{{ url_for('index') }}">Search</a></li>
+      <li><a href="{{ url_for('upload_pdf') }}">Upload PDF</a></li>
+      <li><a href="{{ url_for('documents') }}">Documents</a></li>
+      <li><a href="{{ url_for('history') }}" class="active">History</a></li>
+      <li><a href="{{ url_for('about') }}">About</a></li>
+    </ul>
+  </div>
+</nav>
+<main>
+  <div class="hero">
+    <span class="section-label">Activity Log</span>
+    <h1>Recent <em>searches</em> and URL extractions</h1>
+    <p>This page keeps the last few actions so you can review what was queried, what was extracted, and whether the operation succeeded.</p>
+  </div>
+
+  {% if history_entries %}
+    <div class="grid">
+      {% for entry in history_entries %}
+        <article class="entry">
+          <div class="entry-head">
+            <span class="entry-type">{{ entry.type.replace('_', ' ') if entry.type else 'activity' }}</span>
+            <span class="entry-time">{{ entry.timestamp }}</span>
+          </div>
+          {% if entry.type == 'search' %}
+            <div class="entry-title">{{ entry.query }}</div>
+            <div class="entry-meta">Source: {{ entry.source_mode }} · Language: {{ entry.language }}</div>
+            <div class="pill-row">
+              <span class="pill">{{ 'Success' if entry.success else 'Failed' }}</span>
+              {% if entry.result_count is not none %}<span class="pill">{{ entry.result_count }} results</span>{% endif %}
+              {% if entry.best_score is not none %}<span class="pill">Top score: {{ entry.best_score }}</span>{% endif %}
+            </div>
+          {% else %}
+            <div class="entry-title">{{ entry.url }}</div>
+            <div class="entry-meta">{{ entry.title or entry.message or 'URL extraction activity' }}</div>
+            <div class="pill-row">
+              <span class="pill">{{ 'Success' if entry.success else 'Failed' }}</span>
+            </div>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">No history recorded yet. Run a search or extract a URL from the home page to populate this log.</div>
+  {% endif %}
+</main>
+</body>
+</html>

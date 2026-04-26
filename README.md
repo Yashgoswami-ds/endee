@@ -20,6 +20,9 @@ This project solves that problem by combining vector-based retrieval with a simp
 - Pick source mode: all, only PDF, or only online
 - Upload PDFs and make their content searchable
 - Paste any valid URL and extract readable page text
+- Review recent searches and URL extractions on the History page
+- Browse uploaded documents on the Documents page
+- Use JSON API endpoints for search, history, and documents
 - Translate answers into multiple languages
 - Save answer feedback (like/dislike + optional comment)
 
@@ -188,6 +191,8 @@ pytest -q
 - translator.py: translation handling
 - endee_api.py: Endee API wrapper
 - templates/index.html: main UI template
+- templates/history.html: recent activity view
+- templates/documents.html: uploaded PDF list view
 - requirements.txt: all Python dependencies
 
 ## Project Structure
@@ -206,10 +211,13 @@ AI-Knowledge-Assistant/
 ├── templates/
 │   ├── index.html
 │   ├── upload_pdf.html
+│   ├── documents.html
+│   ├── history.html
 │   └── about.html
 └── data/
     ├── knowledge.txt
     ├── feedback.jsonl
+    ├── search_history.jsonl
     └── uploads/
 ```
 

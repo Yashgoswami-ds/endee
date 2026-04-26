@@ -9,4 +9,5 @@ db/
 *.log
 .pytest_cache/
 data/feedback.jsonl
+data/search_history.jsonl
 data/uploads/
