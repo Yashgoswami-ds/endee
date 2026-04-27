@@ -289,5 +289,5 @@ AI-Knowledge-Assistant/
 ## Developer
 
 - Name: Yash
-- Email: yg86253692outlook.com
+- Email: yg8625369@outlook.com
 
