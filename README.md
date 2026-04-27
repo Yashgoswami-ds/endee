@@ -6,6 +6,21 @@ It is designed to be simple to run, easy to understand, and practical for day-to
 
 Demo Video: Add your hosted demo link here (Google Drive/YouTube)
 
+## Internship Compliance (Mandatory)
+
+For Endee ML Intern evaluation, keep these steps completed and visible:
+
+- Star the official Endee repository: https://github.com/endee-io/endee
+- Fork the official Endee repository to your GitHub account
+- Build and submit from the forked base repository workflow
+- Submit your final GitHub project link in the application form
+
+Recommended proof for evaluators:
+
+- Keep fork relationship visible on GitHub
+- Mention Endee usage clearly in this README
+- Include setup + run steps that work end-to-end
+
 ## Problem Statement
 
 Information is often scattered across local notes, PDFs, and web pages, making it difficult to retrieve accurate answers quickly.
@@ -29,7 +44,7 @@ This project solves that problem by combining vector-based retrieval with a simp
 ## Key Features
 
 ### 1. Smart Search with Ranking
-- Main search flow is in search.py
+- Main search flow is in src/search.py
 - Returns top 3 matches with score
 - Selects the highest-scoring result as best answer
 
@@ -40,7 +55,7 @@ This project solves that problem by combining vector-based retrieval with a simp
   - online: Wikipedia-based online search
 
 ### 3. URL Content Extraction
-- New module: link_extractor.py
+- New module: src/link_extractor.py
 - Accepts http:// or https:// URLs
 - Removes noisy HTML elements (scripts/styles/nav/etc.)
 - Extracts readable text and shows it directly in UI
@@ -51,7 +66,7 @@ This project solves that problem by combining vector-based retrieval with a simp
 - Appends extracted content to local knowledge store
 
 ### 5. Translation Layer
-- Translation helper in translator.py
+- Translation helper in src/translator.py
 - Supports multiple languages (EN, HI, DE, FR, ES, ZH-CN)
 - Uses googletrans, falls back to deep-translator when needed
 
@@ -63,15 +78,15 @@ This project solves that problem by combining vector-based retrieval with a simp
 
 1. User enters question or URL in UI
 2. Flask route in app.py handles request
-3. Search request goes to search.py (local/online/PDF logic)
-4. URL extract request goes to link_extractor.py
+3. Search request goes to src/search.py (local/online/PDF logic)
+4. URL extract request goes to src/link_extractor.py
 5. Result is rendered in templates/index.html
 
 ## How Endee is Used (Indexing + Search Flow)
 
 ### Indexing Flow
 - During ingestion, text content from local knowledge and uploaded PDFs is chunked.
-- Chunks are sent to Endee using `store_to_endee()` from `endee_api.py`.
+- Chunks are sent to Endee using `store_to_endee()` from `src/endee_api.py`.
 - Endee stores vector-ready records that become available for semantic retrieval.
 
 ### Search Flow
@@ -91,12 +106,12 @@ This project solves that problem by combining vector-based retrieval with a simp
 flowchart TD
   U[User Browser] --> F[Flask App - app.py]
 
-  F --> S[Search Service - search.py]
-  F --> L[URL Extractor - link_extractor.py]
-  F --> P[PDF Handler - pdf_handler.py]
-  F --> T[Translator - translator.py]
+  F --> S[Search Service - src/search.py]
+  F --> L[URL Extractor - src/link_extractor.py]
+  F --> P[PDF Handler - src/pdf_handler.py]
+  F --> T[Translator - src/translator.py]
 
-  S --> E[Endee Vector DB API - endee_api.py]
+  S --> E[Endee Vector DB API - src/endee_api.py]
   S --> W[Wikipedia API]
 
   P --> K[data/knowledge.txt]
@@ -138,7 +153,18 @@ pip install -r requirements.txt
 ```
 
 ### 3) Environment config
-Create .env in project root. Endee is required for local/PDF retrieval modes:
+Create .env in project root. Endee is required for local/PDF retrieval modes.
+
+Local Docker mode (recommended for development):
+
+```env
+ENDEE_BASE_URL=http://localhost:8080/api/v1
+ENDEE_API_KEY=your_api_key_here
+ENDEE_INDEX_NAME=ai_knowledge_assistant
+ALLOW_MODEL_DOWNLOAD=0
+```
+
+Cloud dashboard-visible mode (when your evaluator needs cloud visibility):
 
 ```env
 ENDEE_BASE_URL=https://api.endee.ai/v1
@@ -166,12 +192,21 @@ pytest -q
 4. URL test: https://example.com shows extracted content
 5. PDF upload page works
 6. Search returns ranked results with score
+7. Endee index receives vectors after ingestion/upload
+
+## Submission Checklist (Evaluation)
+
+- Repository is on GitHub and publicly accessible (or shared as required)
+- README includes problem statement, architecture, Endee integration, setup, and run instructions
+- Project demonstrates one practical AI use case (semantic search/RAG/retrieval)
+- Endee is used as the vector database in project flow
+- Final repository link is ready to submit
 
 ## Test Cases (Pass Results)
 
 | # | Test Case | Expected Result | Status |
 |---|-----------|-----------------|--------|
-| 1 | Python compile check (`search.py`, `pdf_handler.py`, `app.py`, `endee_api.py`) | No syntax errors | PASS |
+| 1 | Python compile check (`src/search.py`, `src/pdf_handler.py`, `app.py`, `src/endee_api.py`) | No syntax errors | PASS |
 | 2 | Home page route test (`/`) | HTTP 200 response | PASS |
 | 3 | About and Upload routes (`/about`, `/upload-pdf`) | HTTP 200 responses | PASS |
 | 4 | URL extraction flow (`https://example.com`) | Extracted page title/content shown | PASS |
@@ -185,14 +220,17 @@ pytest -q
 ## Important Files
 
 - app.py: main Flask routes
-- search.py: search logic and ranking
-- link_extractor.py: URL text extraction
-- pdf_handler.py: PDF upload and extraction
-- translator.py: translation handling
-- endee_api.py: Endee API wrapper
+- src/search.py: search logic and ranking
+- src/link_extractor.py: URL text extraction
+- src/pdf_handler.py: PDF upload and extraction
+- src/translator.py: translation handling
+- src/endee_api.py: Endee API wrapper
+- scripts/fetch_data.py: helper script to fetch seed knowledge
+- scripts/embed_store.py: helper script to generate/store embeddings
 - templates/index.html: main UI template
 - templates/history.html: recent activity view
 - templates/documents.html: uploaded PDF list view
+- docs/PROJECT_DEVELOPER_MAP.md: architecture and extension guide
 - requirements.txt: all Python dependencies
 
 ## Project Structure
@@ -200,14 +238,18 @@ pytest -q
 ```text
 AI-Knowledge-Assistant/
 ├── app.py
-├── search.py
-├── link_extractor.py
-├── pdf_handler.py
-├── translator.py
-├── endee_api.py
-├── fetch_data.py
-├── embed_store.py
 ├── requirements.txt
+├── src/
+│   ├── endee_api.py
+│   ├── link_extractor.py
+│   ├── pdf_handler.py
+│   ├── search.py
+│   └── translator.py
+├── scripts/
+│   ├── embed_store.py
+│   └── fetch_data.py
+├── docs/
+│   └── PROJECT_DEVELOPER_MAP.md
 ├── templates/
 │   ├── index.html
 │   ├── upload_pdf.html
@@ -239,6 +281,10 @@ AI-Knowledge-Assistant/
 - Add CI workflow for tests and lint checks on pull requests.
 - Add observability dashboard for ingestion/search metrics.
 - Add metadata-filtered retrieval in Endee for stricter source-specific search.
+
+## Developer Map
+
+- For a full file connection map and feature/file add checklist, see docs/PROJECT_DEVELOPER_MAP.md.
 
 ## Developer
 

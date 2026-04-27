@@ -7,11 +7,11 @@ from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
-from search import search
-from pdf_handler import handle_pdf_upload, list_uploaded_pdfs
-from translator import SUPPORTED_LANGUAGES, is_available as translator_available
-from link_extractor import extract_from_url
-from endee_api import is_configured as endee_configured
+from src.search import search
+from src.pdf_handler import handle_pdf_upload, list_uploaded_pdfs
+from src.translator import SUPPORTED_LANGUAGES, is_available as translator_available
+from src.link_extractor import extract_from_url
+from src.endee_api import is_configured as endee_configured
 
 
 load_dotenv()

@@ -1,5 +1,5 @@
-from link_extractor import extract_from_url
-from pdf_handler import handle_pdf_upload
+from src.link_extractor import extract_from_url
+from src.pdf_handler import handle_pdf_upload
 
 
 class DummyUpload:
@@ -16,8 +16,8 @@ def test_extract_invalid_url_returns_error():
 
 
 def test_pdf_upload_requires_endee(monkeypatch):
-    monkeypatch.setattr("pdf_handler.PDF_AVAILABLE", True)
-    monkeypatch.setattr("pdf_handler.endee_configured", lambda: False)
+    monkeypatch.setattr("src.pdf_handler.PDF_AVAILABLE", True)
+    monkeypatch.setattr("src.pdf_handler.endee_configured", lambda: False)
     success, message = handle_pdf_upload(DummyUpload())
     assert success is False
     assert "Endee is required" in message

@@ -6,7 +6,7 @@ try:
     from googletrans import Translator
     TRANSLATOR_AVAILABLE = True
     TRANSLATION_BACKEND = "googletrans"
-except ImportError:
+except Exception:
     TRANSLATOR_AVAILABLE = False
 
 if not TRANSLATOR_AVAILABLE:
@@ -14,7 +14,7 @@ if not TRANSLATOR_AVAILABLE:
         from deep_translator import GoogleTranslator as DeepGoogleTranslator
         TRANSLATOR_AVAILABLE = True
         TRANSLATION_BACKEND = "deep-translator"
-    except ImportError:
+    except Exception:
         TRANSLATOR_AVAILABLE = False
 
 # Supported languages

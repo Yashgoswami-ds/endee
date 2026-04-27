@@ -4,7 +4,7 @@ import os
 import logging
 from pathlib import Path
 from werkzeug.utils import secure_filename
-from endee_api import store_to_endee, is_configured as endee_configured
+from src.endee_api import store_to_endee, is_configured as endee_configured
 
 try:
     from PyPDF2 import PdfReader

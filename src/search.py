@@ -7,8 +7,8 @@ from urllib.parse import quote
 
 import requests
 
-from endee_api import search_endee, is_configured as endee_configured
-from translator import translate_result
+from src.endee_api import search_endee, is_configured as endee_configured
+from src.translator import translate_result
 
 logger = logging.getLogger(__name__)
 

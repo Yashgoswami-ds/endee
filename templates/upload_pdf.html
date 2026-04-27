@@ -176,11 +176,102 @@
   <div class="section">
     <p class="section-label">PDF Upload</p>
     <h2>Add your documents</h2>
-    <p style="margin-bottom: 1.5rem;">Go to the Upload page and select your PDF file. Once uploaded, head to Search and choose "Only PDF" mode — then ask questions directly from your document.</p>
-    <a href="{{ url_for('upload_pdf') }}" class="cta">Upload a PDF →</a>
+    <p style="margin-bottom: 1.5rem;">Select a PDF file to upload. Your document will be analyzed and indexed for fast searching.</p>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div style="padding: 0.8rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.92rem;
+            {% if category == 'success' %}
+              background: rgba(63, 191, 155, 0.15); color: #3fbf9b; border: 1px solid rgba(63, 191, 155, 0.3);
+            {% else %}
+              background: rgba(255, 100, 100, 0.15); color: #ff6464; border: 1px solid rgba(255, 100, 100, 0.3);
+            {% endif %}
+          ">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    
+    <form method="POST" enctype="multipart/form-data" style="margin-top: 1.5rem;">
+      <div style="
+        border: 2px dashed var(--border); border-radius: 10px; padding: 2rem;
+        text-align: center; background: rgba(63, 191, 155, 0.05);
+        transition: border-color 0.2s, background 0.2s;
+        cursor: pointer;
+      " id="dropZone">
+        <input 
+          type="file" 
+          name="pdf_file" 
+          accept=".pdf" 
+          id="fileInput"
+          style="display: none;"
+          required
+        />
+        <div style="margin-bottom: 0.5rem;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📄</div>
+          <div style="font-size: 0.95rem; font-weight: 500; color: var(--ink); margin-bottom: 0.25rem;">
+            Click to upload or drag and drop
+          </div>
+          <div style="font-size: 0.85rem; color: var(--ink-soft);">
+            PDF files only (max 50MB)
+          </div>
+        </div>
+      </div>
+      
+      <div id="fileName" style="
+        margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 6px;
+        background: var(--white); border: 1px solid var(--border);
+        color: var(--ink); font-size: 0.9rem; display: none;
+      "></div>
+      
+      <button type="submit" class="cta" style="width: 100%; text-align: center; margin-top: 1.5rem;">
+        Upload PDF
+      </button>
+    </form>
   </div>
 
 </main>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileNameDiv = document.getElementById('fileName');
+
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.style.borderColor = 'var(--rust)';
+  dropZone.style.background = 'rgba(63, 191, 155, 0.1)';
+});
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.style.borderColor = 'var(--border)';
+  dropZone.style.background = 'rgba(63, 191, 155, 0.05)';
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.style.borderColor = 'var(--border)';
+  dropZone.style.background = 'rgba(63, 191, 155, 0.05)';
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    fileInput.files = files;
+    updateFileName(files[0].name);
+  }
+});
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length > 0) {
+    updateFileName(fileInput.files[0].name);
+  }
+});
+
+function updateFileName(name) {
+  fileNameDiv.textContent = '✓ Selected: ' + name;
+  fileNameDiv.style.display = 'block';
+}
+</script>
 
 </body>
 </html>
